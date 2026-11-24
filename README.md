@@ -243,3 +243,45 @@ Each provider as the primary reviewer:
 node --test test/*.test.js
 ```
 
+
+
+## 4. Mode B — Multi-agent / multi-model review
+
+In this mode, one primary reviewer and up to two secondary reviewers are configured. The secondary reviewers run **in parallel**. The primary reviewer then performs its own independent review and decides which secondary findings are genuinely additional and valid.
+
+```mermaid
+flowchart TD
+    A([Review input ready]) --> B[Prepare the same review context for each configured reviewer]
+
+    B --> C1[Send context to secondary reviewer 1]
+    B --> C2[Send context to secondary reviewer 2]
+    B --> P1[Send context to primary reviewer]
+
+    C1 --> R1{Secondary 1 succeeded?}
+    C2 --> R2{Secondary 2 succeeded?}
+
+    R1 -->|Yes| S1[Collect secondary 1 findings]
+    R1 -->|No| X1[Drop failed secondary 1]
+    R2 -->|Yes| S2[Collect secondary 2 findings]
+    R2 -->|No| X2[Drop failed secondary 2]
+
+    P1 --> PR{Primary request succeeded?}
+    PR -->|No| RETRY[Retry once with the same primary model]
+    RETRY --> PR2{Retry succeeded?}
+    PR2 -->|No| FAIL([Review run fails])
+    PR2 -->|Yes| BASE[Keep primary's independent review]
+    PR -->|Yes| BASE
+
+    S1 --> MERGE[Provide successful secondary findings for consolidation]
+    S2 --> MERGE
+    X1 --> MERGE
+    X2 --> MERGE
+    BASE --> MERGE
+
+    MERGE --> VALIDATE[Primary evaluates secondary findings]
+    VALIDATE --> FILTER[Keep only findings that are new and real]
+    FILTER --> FINAL[Combine primary review with accepted secondary findings]
+    FINAL --> OUT[Structured review: summary, inline comments and verdict]
+    OUT --> DONE([Review result])
+```
+
