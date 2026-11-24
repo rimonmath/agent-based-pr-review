@@ -244,44 +244,40 @@ node --test test/*.test.js
 ```
 
 
+# Kolpo — PR Review Process Diagrams
 
-## 4. Mode B — Multi-agent / multi-model review
-
-In this mode, one primary reviewer and up to two secondary reviewers are configured. The secondary reviewers run **in parallel**. The primary reviewer then performs its own independent review and decides which secondary findings are genuinely additional and valid.
+## Mode 1: Single AI Reviewer
 
 ```mermaid
 flowchart TD
-    A([Review input ready]) --> B[Prepare the same review context for each configured reviewer]
+    A[Pull Request / Git changes] --> B[Collect diff and changed-file contents]
+    B --> C[Primary AI reviewer]
+    C --> D[Analyze changes]
+    D --> E[Generate review]
+    E --> F[Summary + inline comments + verdict]
+    F --> G[Save Markdown report or post review to GitHub]
+```
 
-    B --> C1[Send context to secondary reviewer 1]
-    B --> C2[Send context to secondary reviewer 2]
-    B --> P1[Send context to primary reviewer]
+## Mode 2: Multi-AI Reviewers
 
-    C1 --> R1{Secondary 1 succeeded?}
-    C2 --> R2{Secondary 2 succeeded?}
+```mermaid
+flowchart TD
+    A[Pull Request / Git changes] --> B[Collect diff and changed-file contents]
 
-    R1 -->|Yes| S1[Collect secondary 1 findings]
-    R1 -->|No| X1[Drop failed secondary 1]
-    R2 -->|Yes| S2[Collect secondary 2 findings]
-    R2 -->|No| X2[Drop failed secondary 2]
+    B --> C[Primary AI reviewer]
+    B --> D[Secondary AI reviewer 1]
+    B --> E[Secondary AI reviewer 2]
 
-    P1 --> PR{Primary request succeeded?}
-    PR -->|No| RETRY[Retry once with the same primary model]
-    RETRY --> PR2{Retry succeeded?}
-    PR2 -->|No| FAIL([Review run fails])
-    PR2 -->|Yes| BASE[Keep primary's independent review]
-    PR -->|Yes| BASE
+    C --> F[Primary review]
+    D --> G[Additional findings]
+    E --> G
 
-    S1 --> MERGE[Provide successful secondary findings for consolidation]
-    S2 --> MERGE
-    X1 --> MERGE
-    X2 --> MERGE
-    BASE --> MERGE
+    F --> H[Primary validates secondary findings]
+    G --> H
 
-    MERGE --> VALIDATE[Primary evaluates secondary findings]
-    VALIDATE --> FILTER[Keep only findings that are new and real]
-    FILTER --> FINAL[Combine primary review with accepted secondary findings]
-    FINAL --> OUT[Structured review: summary, inline comments and verdict]
-    OUT --> DONE([Review result])
+    H --> I[Keep valid findings not already reported]
+    I --> J[Final review]
+    J --> K[Summary + inline comments + verdict]
+    K --> L[Save Markdown report or post review to GitHub]
 ```
 
